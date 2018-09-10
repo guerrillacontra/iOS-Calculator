@@ -1,115 +1,111 @@
-var onLoad = function onLoad() {
-  var output = document.getElementById("output");
+class Calculator {
+  constructor() {
+    this._value = 0;
+    this._buffer = "";
+    this.outputChanged = output => {};
+    this.ac = this.ac.bind(this);
+    this.invert = this.invert.bind(this);
+    this.equals = this.equals.bind(this);
+    this.appendNumber = this.appendNumber.bind(this);
+    this.add = this.add.bind(this);
+    this.sub = this.sub.bind(this);
+    this.mult = this.mult.bind(this);
+    this.div = this.div.bind(this);
+    this.percentage = this.percentage.bind(this);
+  }
 
-  var buttons = document.querySelectorAll("input[type=button]");
+  ac() {
+    this._value = 0;
+    this._buffer = "";
+    this.outputChanged(this._value);
+  }
 
-  var total = 0;
+  equals() {
+    this._value += eval(this._buffer);
+    this._buffer = "";
+    this.outputChanged(this._value);
+  }
 
-  var buffer = "";
-  var currentPush = "";
-  var operatorCount = 0;
+  invert() {
+    this._buffer = -eval(this._buffer);
+    this.outputChanged(this._buffer);
+  }
+  
+  percentage(){
+    const val = eval(this._buffer);
+    const p = val / 100.0;
+    this._buffer = p;
+    this.outputChanged(this._buffer);
+  }
 
-  var setOutput = function setOutput(val) {
+  appendNumber(value) {
+    this._buffer += value;
+    this.outputChanged(this._buffer);
+  }
+
+  add() {
+    this._buffer += "+";
+    this.outputChanged(this._buffer);
+  }
+
+  sub() {
+    this._buffer += "-";
+    this.outputChanged(this._buffer);
+  }
+
+  mult() {
+    this._buffer += "*";
+    this.outputChanged(this._buffer);
+  }
+
+  div() {
+    this._buffer += "/";
+    this.outputChanged(this._buffer);
+  }
+}
+
+const onLoad = () => {
+  const calculator = new Calculator();
+
+  const output = document.getElementById("output");
+
+  calculator.outputChanged = val => {
     output.value = "" + val;
   };
 
-  setOutput(total);
+  calculator.ac();
 
-  var ac = function ac(args) {
-    total = 0;
-    buffer = "";
-    operatorCount = 0;
-    setOutput(total);
-  };
+  const buttons = document.querySelectorAll("input[type=button]");
 
-  var pushNumber = function pushNumber(args) {
-    buffer += args;
-    currentPush += args;
-    setOutput(currentPush);
-  };
+  const actionMap = new Map();
+  actionMap.set("AC", calculator.ac);
+  actionMap.set("+/-", calculator.invert);
+  actionMap.set("%", calculator.percentage);
+  actionMap.set("0", calculator.appendNumber);
+  actionMap.set("1", calculator.appendNumber);
+  actionMap.set("2", calculator.appendNumber);
+  actionMap.set("3", calculator.appendNumber);
+  actionMap.set("4", calculator.appendNumber);
+  actionMap.set("5", calculator.appendNumber);
+  actionMap.set("6", calculator.appendNumber);
+  actionMap.set("7", calculator.appendNumber);
+  actionMap.set("8", calculator.appendNumber);
+  actionMap.set("9", calculator.appendNumber);
+  actionMap.set("+", calculator.add);
+  actionMap.set("-", calculator.sub);
+  actionMap.set("x", calculator.mult);
+  actionMap.set("÷", calculator.div);
+  actionMap.set("=", calculator.equals);
 
-  //higher order wrapper around all operations
-  var operatorWrap = function operatorWrap(action) {
-    return function (args) {
-      operatorCount++;
+  const onButtonClick = args => {
+    const actionKey = args.target.value;
 
-      if (operatorCount != 0) {
-        valueEquals(args);
-        operatorCount = 0;
-      }
-
-      currentPush = "";
-
-      action(args);
-    };
-  };
-
-  var add = function add(args) {
-    buffer += "+";
-  };
-
-  var subtract = function subtract(args) {
-    buffer += "-";
-  };
-
-  var divide = function divide(args) {
-    var current = Number(eval(buffer));
-
-    if (current == 0) {
-      ac(args);
-      return;
-    }
-
-    buffer += "/";
-    operatorCount++;
-    if (operatorCount == 2) {
-      valueEquals(args);
-    }
-  };
-
-  var multiply = function multiply(args) {
-    buffer += "*";
-    operatorCount++;
-    if (operatorCount == 2) {
-      valueEquals(args);
-    }
-  };
-
-  var valueEquals = function valueEquals(args) {
-    total = eval(buffer);
-    buffer = "" + total;
-    operatorCount = 0;
-    currentPush = "";
-    setOutput(total);
-  };
-
-  var actionMap = new Map();
-  actionMap.set("AC", ac);
-  actionMap.set("0", pushNumber);
-  actionMap.set("1", pushNumber);
-  actionMap.set("2", pushNumber);
-  actionMap.set("3", pushNumber);
-  actionMap.set("4", pushNumber);
-  actionMap.set("5", pushNumber);
-  actionMap.set("6", pushNumber);
-  actionMap.set("7", pushNumber);
-  actionMap.set("8", pushNumber);
-  actionMap.set("9", pushNumber);
-  actionMap.set("+", operatorWrap(add));
-  actionMap.set("-", operatorWrap(subtract));
-  actionMap.set("÷", operatorWrap(divide));
-  actionMap.set("x", operatorWrap(multiply));
-  actionMap.set("=", valueEquals);
-
-  var onButtonClick = function onButtonClick(args) {
-    var actionKey = args.target.value;
-
-    var action = actionMap.get(actionKey);
+    const action = actionMap.get(actionKey);
 
     if (action) action(actionKey);
   };
 
-  buttons.forEach(function (button) {
+  buttons.forEach(button => {
     button.addEventListener("click", onButtonClick);
   });
 };
